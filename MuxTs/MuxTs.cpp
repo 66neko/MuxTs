@@ -1,3 +1,9 @@
+/*
+author:yume.liu
+date:2016.7.21
+muxing h265/hevc,h264,aac to .ts
+https://github.com/yu-s/MuxTs
+*/
 #include "MuxTs.h"
 
 using namespace std;
@@ -228,7 +234,7 @@ int MuxTs::WriteFrame(unsigned char * buffer, int len, uint64_t pts, AVCODEC typ
 			}
 			else if (MUXTS_CODEC_H264 == type || MUXTS_CODEC_HEVC == type)
 			{
-				this->WritePES(pesLen, m_pat.pmt.pes[index].stream_id, 0x03, 0x0a, s_pts);
+				this->WritePES(pesLen, m_pat.pmt.pes[index].stream_id, 0x02, 0x05, s_pts);
 			}
 			INCOUNT(m_pat.pmt.pes[index].count);
 			m_packetCount++;
@@ -510,7 +516,7 @@ int MuxTs::WriteAdaptation(unsigned length, bool PCR_flag, TS_PCR pcr)
 	//aac音频时的情况 此处可能会出错
 	if (0x01 == length)
 	{
-		ts_adap.random_access_indicator = 0xff;
+		ts_adap.random_access_indicator = 0x00;//aac ff
 	}
 	ts_adap.OPCR_flag = 0x00;
 	ts_adap.splicing_point_flag = 0x00;
@@ -520,6 +526,10 @@ int MuxTs::WriteAdaptation(unsigned length, bool PCR_flag, TS_PCR pcr)
 	BITSET(bit1_len, 0, ts_adap.adaptation_field_length);
 	memcpy(data.buff + data.seek, &bit1_len, 1);
 	data.seek += 1;
+	if (0 == ts_adap.adaptation_field_length)
+	{
+		return 0;
+	}
 	BYTE bit1 = 0x00;
 	BITSET(bit1, 0, ts_adap.discontinuity_indicator);
 	BITSET(bit1, 1, ts_adap.random_access_indicator);
